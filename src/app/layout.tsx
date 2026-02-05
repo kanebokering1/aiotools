@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import AdSenseScript from "@/components/AdSenseScript";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -134,6 +135,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Google AdSense Verification */}
+        <meta name="google-adsense-account" content="ca-pub-3785229797706695" />
+        
+        {/* AdSense Script */}
+        <AdSenseScript />
+        
+        {/* JSON-LD Schema */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
