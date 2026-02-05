@@ -50,6 +50,13 @@ export default function Header() {
             Home
           </Link>
           
+          <Link
+            href="/blog"
+            className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-50 hover:text-blue-600"
+          >
+            📚 Blog
+          </Link>
+          
           {/* All Tools Mega Menu */}
           <div
             className="relative"

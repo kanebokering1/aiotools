@@ -25,6 +25,42 @@ interface SEOContentProps {
 export default function SEOContent({ whatIsIt, howToUse, features, faq }: SEOContentProps) {
   return (
     <div className="mt-16 space-y-6">
+      {/* FAQ Schema for Rich Snippets */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": faq.questions.map(item => ({
+              "@type": "Question",
+              "name": item.q,
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": item.a
+              }
+            }))
+          })
+        }}
+      />
+
+      {/* HowTo Schema for Rich Snippets */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "HowTo",
+            "name": howToUse.title,
+            "step": howToUse.steps.map((step, index) => ({
+              "@type": "HowToStep",
+              "position": index + 1,
+              "text": step
+            }))
+          })
+        }}
+      />
+
       {/* What Is It Section */}
       <section className="rounded-2xl bg-white border-2 border-gray-100 p-8 shadow-sm hover:shadow-md transition-shadow">
         <h2 className="text-3xl font-bold text-gray-900 mb-6 pb-3 border-b-2 border-blue-100">
