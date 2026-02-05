@@ -54,7 +54,7 @@ export default function Header() {
             href="/blog"
             className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-50 hover:text-blue-600"
           >
-            📚 Blog
+            Blog
           </Link>
           
           {/* All Tools Mega Menu */}
