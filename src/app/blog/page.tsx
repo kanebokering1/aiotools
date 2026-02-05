@@ -153,34 +153,6 @@ export default function BlogPage() {
           ))}
         </div>
 
-        {/* Newsletter CTA */}
-        <div className="mt-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 p-1 shadow-xl">
-          <div className="rounded-xl bg-white p-8 text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">
-              📬 Subscribe Newsletter
-            </h2>
-            <p className="text-gray-600 mb-6 max-w-xl mx-auto">
-              Dapatkan tips & tutorial baru langsung ke email Anda. Gratis!
-            </p>
-            <form className="flex gap-3 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="email@example.com"
-                className="flex-1 rounded-lg border-2 border-gray-200 px-4 py-3 focus:border-blue-500 focus:outline-none"
-                required
-              />
-              <button
-                type="submit"
-                className="px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors"
-              >
-                Subscribe
-              </button>
-            </form>
-            <p className="text-xs text-gray-500 mt-3">
-              Kami menghormati privasi Anda. Unsubscribe kapan saja.
-            </p>
-          </div>
-        </div>
       </main>
 
       <Footer />
