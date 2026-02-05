@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
+import ShareButtons from "@/components/ShareButtons";
 import { PDFDocument } from "pdf-lib";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
@@ -317,6 +318,17 @@ export default function PDFSplitClient() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Share Buttons */}
+        <div className="mb-12 flex justify-center">
+          <div className="rounded-xl bg-white border border-gray-200 p-6 shadow-sm">
+            <ShareButtons 
+              url={typeof window !== 'undefined' ? window.location.href : 'https://aiotools.arthacodestudio.com/pdftools/pdf-split'}
+              title="PDF Splitter - Split PDF Pages Online Free | AIO Tools"
+              description="Split PDF into separate pages or extract specific pages for free. Fast and secure!"
+            />
           </div>
         </div>
 
