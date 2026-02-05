@@ -82,38 +82,34 @@ export default function Newsletter() {
   };
 
   return (
-    <div className="rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 p-8 shadow-sm">
+    <div className="rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 p-6 shadow-sm">
       <div className="mx-auto max-w-2xl text-center">
-        {/* Icon */}
-        <div className="mb-4 flex justify-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-            <Mail className="h-6 w-6 text-blue-600" />
-          </div>
-        </div>
-
         {/* Heading */}
-        <h3 className="mb-2 text-2xl font-bold text-gray-900">
-          Stay Updated!
-        </h3>
-        <p className="mb-6 text-gray-600">
-          Get the latest tools, tips, and updates delivered to your inbox. No spam, unsubscribe anytime.
+        <div className="mb-4 flex items-center justify-center gap-2">
+          <Mail className="h-5 w-5 text-blue-600" />
+          <h3 className="text-lg font-bold text-gray-900">
+            Stay Updated!
+          </h3>
+        </div>
+        <p className="mb-4 text-sm text-gray-600">
+          Get the latest tools & updates. No spam, unsubscribe anytime.
         </p>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="mx-auto max-w-md">
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
               disabled={status === "loading" || status === "success"}
-              className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
             <button
               type="submit"
               disabled={status === "loading" || status === "success"}
-              className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed border-2 border-blue-700 hover:border-blue-800 shadow-sm hover:shadow-md"
+              className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed border-2 border-blue-700 hover:border-blue-800 shadow-sm hover:shadow-md"
             >
               {status === "loading" && (
                 <>
@@ -140,7 +136,7 @@ export default function Newsletter() {
           {/* Status Message */}
           {message && (
             <div
-              className={`mt-3 rounded-lg p-3 text-sm ${
+              className={`mt-2 rounded-lg p-2 text-xs ${
                 status === "success"
                   ? "bg-green-50 text-green-800 border border-green-200"
                   : "bg-red-50 text-red-800 border border-red-200"
@@ -152,17 +148,17 @@ export default function Newsletter() {
         </form>
 
         {/* Trust Badges */}
-        <div className="mt-6 flex items-center justify-center gap-4 text-xs text-gray-500">
+        <div className="mt-3 flex items-center justify-center gap-3 text-xs text-gray-500">
           <span className="flex items-center gap-1">
-            <Check className="h-4 w-4 text-green-600" />
-            100% Free
+            <Check className="h-3 w-3 text-green-600" />
+            Free
           </span>
           <span className="flex items-center gap-1">
-            <Check className="h-4 w-4 text-green-600" />
+            <Check className="h-3 w-3 text-green-600" />
             No Spam
           </span>
           <span className="flex items-center gap-1">
-            <Check className="h-4 w-4 text-green-600" />
+            <Check className="h-3 w-3 text-green-600" />
             Unsubscribe Anytime
           </span>
         </div>

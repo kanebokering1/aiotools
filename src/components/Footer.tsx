@@ -8,7 +8,7 @@ export default function Footer() {
     <footer className="border-t border-slate-200 bg-white">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Newsletter Section */}
-        <div className="mb-16">
+        <div className="mb-12">
           <Newsletter />
         </div>
 
