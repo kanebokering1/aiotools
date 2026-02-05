@@ -103,8 +103,33 @@ export default function Footer() {
           </div>
         </div>
 
+        {/* Legal & Company Links */}
+        <div className="mt-12 pt-8 border-t border-slate-200">
+          <div className="flex flex-wrap justify-center gap-6">
+            <Link href="/about" className="text-sm text-slate-600 hover:text-blue-600 transition-colors font-medium">
+              About Us
+            </Link>
+            <span className="text-slate-300">•</span>
+            <Link href="/contact" className="text-sm text-slate-600 hover:text-blue-600 transition-colors font-medium">
+              Contact
+            </Link>
+            <span className="text-slate-300">•</span>
+            <Link href="/privacy" className="text-sm text-slate-600 hover:text-blue-600 transition-colors font-medium">
+              Privacy Policy
+            </Link>
+            <span className="text-slate-300">•</span>
+            <Link href="/terms" className="text-sm text-slate-600 hover:text-blue-600 transition-colors font-medium">
+              Terms of Service
+            </Link>
+            <span className="text-slate-300">•</span>
+            <Link href="/blog" className="text-sm text-slate-600 hover:text-blue-600 transition-colors font-medium">
+              Blog
+            </Link>
+          </div>
+        </div>
+
         {/* Bottom */}
-        <div className="mt-12 border-t border-slate-200 pt-8">
+        <div className="mt-8 border-t border-slate-200 pt-8">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <Link href="/" className="flex items-center gap-2 group">
               <div className="flex h-8 w-auto items-center justify-center">
