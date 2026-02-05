@@ -16,7 +16,7 @@ export default function RelatedTools({ tools }: RelatedToolsProps) {
   if (tools.length === 0) return null;
 
   return (
-    <div className="mt-6 rounded-2xl bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-100 p-8 shadow-sm">
+    <div className="mt-6 rounded-2xl bg-blue-50 border-2 border-blue-100 p-8 shadow-sm">
       <div className="mb-8 text-center">
         <div className="inline-flex items-center justify-center gap-2 mb-3">
           <Sparkles className="h-6 w-6 text-blue-600" />
@@ -35,11 +35,8 @@ export default function RelatedTools({ tools }: RelatedToolsProps) {
           <Link
             key={tool.id}
             href={tool.href}
-            className="group relative flex items-start gap-4 rounded-xl bg-white border-2 border-blue-200 p-6 transition-all hover:border-blue-400 hover:shadow-lg hover:-translate-y-1"
+            className="group relative flex items-start gap-4 rounded-xl bg-white/60 backdrop-blur-sm border-2 border-blue-200 p-6 transition-all hover:bg-white/90 hover:border-blue-400 hover:shadow-lg hover:-translate-y-1"
           >
-            {/* Gradient overlay on hover */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-            
             <div className="flex-1 relative z-10">
               <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-2">
                 {tool.name}

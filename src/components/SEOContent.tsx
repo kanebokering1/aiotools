@@ -53,7 +53,7 @@ export default function SEOContent({ whatIsIt, howToUse, features, faq }: SEOCon
       </section>
 
       {/* Features Section */}
-      <section className="rounded-2xl bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-100 p-8 shadow-sm hover:shadow-md transition-shadow">
+      <section className="rounded-2xl bg-blue-50 border-2 border-blue-100 p-8 shadow-sm hover:shadow-md transition-shadow">
         <h2 className="text-3xl font-bold text-gray-900 mb-6 pb-3 border-b-2 border-blue-200">
           {features.title}
         </h2>
