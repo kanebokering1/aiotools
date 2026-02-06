@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { QrCode, Download, Copy, CheckCircle, AlertCircle } from "lucide-react";
+import { QrCode, Download, Copy, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
@@ -233,13 +233,13 @@ export default function QRCodeGeneratorClient() {
                 >
                   {isGenerating ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Generating...
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Generating...</span>
                     </>
                   ) : (
                     <>
-                      <QrCode className="h-4 w-4" />
-                      Generate QR Code
+                      <QrCode className="h-5 w-5" />
+                      <span>Generate QR Code</span>
                     </>
                   )}
                 </button>
@@ -265,7 +265,22 @@ export default function QRCodeGeneratorClient() {
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Generated QR Code</h2>
               
               <div className="flex flex-col items-center">
-                {qrCodeUrl ? (
+                {isGenerating ? (
+                  <div className="flex h-64 flex-col items-center justify-center rounded-lg bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 w-full">
+                    <Loader2 className="h-12 w-12 animate-spin text-purple-600 mb-4" />
+                    <p className="text-lg font-semibold text-gray-900 mb-2">
+                      Generating QR Code...
+                    </p>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Please wait while we create your QR code
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-purple-600" style={{ animationDelay: '0ms' }}></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-purple-600" style={{ animationDelay: '150ms' }}></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-purple-600" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                ) : qrCodeUrl ? (
                   <>
                     <div className="mb-4 p-4 bg-white border-2 border-gray-200 rounded-lg">
                       <img

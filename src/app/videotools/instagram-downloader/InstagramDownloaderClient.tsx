@@ -122,8 +122,28 @@ export default function InstagramDownloaderClient() {
                 </div>
               )}
 
+              {/* Loading Overlay */}
+              {isLoading && (
+                <div className="mt-4 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 p-8">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-purple-600 mb-4" />
+                    <p className="text-lg font-semibold text-gray-900 mb-2">
+                      Processing Instagram Content...
+                    </p>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Please wait while we fetch your content
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-purple-600" style={{ animationDelay: '0ms' }}></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-purple-600" style={{ animationDelay: '150ms' }}></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-purple-600" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Success Message */}
-              {success && (
+              {success && !isLoading && (
                 <div className="rounded-md bg-green-50 p-4 border border-green-200">
                   <div className="flex items-center justify-between">
                     <div className="flex">

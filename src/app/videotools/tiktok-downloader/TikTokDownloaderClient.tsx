@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { Download, Music, AlertCircle, CheckCircle } from "lucide-react";
+import { Download, Music, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
@@ -154,19 +154,42 @@ export default function TikTokDownloaderClient() {
               className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 border-2 border-blue-700 hover:border-blue-800 px-4 py-3 font-semibold text-white transition-all shadow-sm hover:shadow-md disabled:bg-slate-200 disabled:border-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                  Fetching Video Info...
-                </div>
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Fetching Video Info...</span>
+                </>
               ) : (
-                "Get Video Info"
+                <>
+                  <Music className="h-5 w-5" />
+                  <span>Get Video Info</span>
+                </>
               )}
             </button>
           </form>
         </div>
 
+        {/* Loading Overlay */}
+        {isLoading && (
+          <div className="mb-8 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 p-8">
+            <div className="flex flex-col items-center justify-center text-center">
+              <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
+              <p className="text-lg font-semibold text-gray-900 mb-2">
+                Fetching TikTok Video...
+              </p>
+              <p className="text-sm text-gray-600 mb-4">
+                Please wait while we retrieve video information
+              </p>
+              <div className="flex items-center justify-center gap-2">
+                <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: '0ms' }}></div>
+                <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: '150ms' }}></div>
+                <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: '300ms' }}></div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Video Info & Download Options */}
-        {videoInfo && (
+        {videoInfo && !isLoading && (
           <div className="mb-8 rounded-xl bg-white border border-gray-200 p-6 shadow-sm">
             <div className="flex items-start gap-4 mb-6">
               <CheckCircle className="h-6 w-6 text-green-600 mt-1" />

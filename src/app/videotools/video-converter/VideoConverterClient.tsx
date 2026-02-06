@@ -193,8 +193,28 @@ export default function VideoConverterClient() {
                 </div>
               )}
 
+              {/* Processing Overlay */}
+              {isConverting && (
+                <div className="mt-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 p-8">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-green-600 mb-4" />
+                    <p className="text-lg font-semibold text-gray-900 mb-2">
+                      Converting Video...
+                    </p>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Converting to {outputFormat.toUpperCase()} format with {quality} quality
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-green-600" style={{ animationDelay: '0ms' }}></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-green-600" style={{ animationDelay: '150ms' }}></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-green-600" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Success Message */}
-              {success && (
+              {success && !isConverting && (
                 <div className="rounded-md bg-green-50 p-4 border border-green-200">
                   <div className="flex items-center justify-between">
                     <div className="flex">
