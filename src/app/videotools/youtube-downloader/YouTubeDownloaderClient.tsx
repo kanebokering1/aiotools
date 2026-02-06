@@ -5,8 +5,9 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { Download, Youtube, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { Download, Youtube, AlertCircle, CheckCircle } from "lucide-react";
 import Link from "next/link";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
 
@@ -291,8 +292,8 @@ export default function YouTubeDownloaderClient() {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Fetching Video Info...</span>
+                  <LoadingAnimation size="sm" message="" />
+                  <span>Processing...</span>
                 </>
               ) : (
                 <>
@@ -307,20 +308,7 @@ export default function YouTubeDownloaderClient() {
         {/* Loading Overlay */}
         {isLoading && (
           <div className="mb-8 rounded-xl bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 p-8">
-            <div className="flex flex-col items-center justify-center text-center">
-              <Loader2 className="h-12 w-12 animate-spin text-red-600 mb-4" />
-              <p className="text-lg font-semibold text-gray-900 mb-2">
-                Fetching Video Information...
-              </p>
-              <p className="text-sm text-gray-600 mb-4">
-                Please wait while we retrieve video details from YouTube
-              </p>
-              <div className="flex items-center justify-center gap-2">
-                <div className="h-2 w-2 animate-bounce rounded-full bg-red-600" style={{ animationDelay: '0ms' }}></div>
-                <div className="h-2 w-2 animate-bounce rounded-full bg-red-600" style={{ animationDelay: '150ms' }}></div>
-                <div className="h-2 w-2 animate-bounce rounded-full bg-red-600" style={{ animationDelay: '300ms' }}></div>
-              </div>
-            </div>
+            <LoadingAnimation message="Fetching video information from YouTube..." size="lg" />
           </div>
         )}
 
@@ -415,7 +403,7 @@ export default function YouTubeDownloaderClient() {
                     >
                       <span>MP4 - 1080p HD</span>
                       {isDownloading === "MP4-1080p" ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                        <LoadingAnimation size="sm" message="" />
                       ) : (
                         <Download className="h-4 w-4" />
                       )}
@@ -428,7 +416,7 @@ export default function YouTubeDownloaderClient() {
                     >
                       <span>MP4 - 720p HD</span>
                       {isDownloading === "MP4-720p" ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                        <LoadingAnimation size="sm" message="" />
                       ) : (
                         <Download className="h-4 w-4" />
                       )}
@@ -441,7 +429,7 @@ export default function YouTubeDownloaderClient() {
                     >
                       <span>MP4 - 480p</span>
                       {isDownloading === "MP4-480p" ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                        <LoadingAnimation size="sm" message="" />
                       ) : (
                         <Download className="h-4 w-4" />
                       )}
@@ -461,7 +449,7 @@ export default function YouTubeDownloaderClient() {
                     >
                       <span>MP3 - 320 kbps</span>
                       {isDownloading === "MP3-320kbps" ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                        <LoadingAnimation size="sm" message="" />
                       ) : (
                         <Download className="h-4 w-4" />
                       )}
@@ -474,7 +462,7 @@ export default function YouTubeDownloaderClient() {
                     >
                       <span>MP3 - 128 kbps</span>
                       {isDownloading === "MP3-128kbps" ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                        <LoadingAnimation size="sm" message="" />
                       ) : (
                         <Download className="h-4 w-4" />
                       )}

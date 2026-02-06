@@ -5,7 +5,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { RefreshCw, Upload, Download, Image as ImageIcon, Loader2 } from "lucide-react";
+import { RefreshCw, Upload, Download, Image as ImageIcon } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
 
@@ -130,8 +131,8 @@ export default function ImageConverterClient() {
               >
                 {isConverting ? (
                   <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    Converting...
+                    <LoadingAnimation size="sm" message="" />
+                    <span>Processing...</span>
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">
@@ -146,20 +147,7 @@ export default function ImageConverterClient() {
           {/* Processing Overlay */}
           {isConverting && (
             <div className="rounded-2xl border-2 border-cyan-200 bg-gradient-to-br from-cyan-50 to-blue-50 p-8 shadow-sm">
-              <div className="flex flex-col items-center justify-center text-center">
-                <Loader2 className="h-12 w-12 animate-spin text-cyan-600 mb-4" />
-                <p className="text-lg font-semibold text-gray-900 mb-2">
-                  Converting Image...
-                </p>
-                <p className="text-sm text-gray-600 mb-4">
-                  Converting to {outputFormat.toUpperCase()} format
-                </p>
-                <div className="flex items-center justify-center gap-2">
-                  <div className="h-2 w-2 animate-bounce rounded-full bg-cyan-600" style={{ animationDelay: '0ms' }}></div>
-                  <div className="h-2 w-2 animate-bounce rounded-full bg-cyan-600" style={{ animationDelay: '150ms' }}></div>
-                  <div className="h-2 w-2 animate-bounce rounded-full bg-cyan-600" style={{ animationDelay: '300ms' }}></div>
-                </div>
-              </div>
+              <LoadingAnimation message={`Converting to ${outputFormat.toUpperCase()} format...`} size="lg" />
             </div>
           )}
 
