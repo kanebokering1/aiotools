@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Minimize2, Upload, Download, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { Minimize2, Upload, Download, AlertCircle, CheckCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
 
@@ -236,8 +237,8 @@ export default function ImageCompressorClient() {
                 >
                   {isCompressing ? (
                     <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Compressing...
+                      <LoadingAnimation size="sm" message="" />
+                      <span>Processing...</span>
                     </>
                   ) : (
                     <>
