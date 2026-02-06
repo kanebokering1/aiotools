@@ -5,18 +5,107 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { FileSpreadsheet, Upload, AlertCircle } from "lucide-react";
+import { FileSpreadsheet, Upload, Download, Loader2, CheckCircle } from "lucide-react";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
+import { PDFDocument } from "pdf-lib";
+import * as XLSX from "xlsx";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Set worker
+if (typeof window !== "undefined") {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+}
 
 export default function PDFToExcelClient() {
   const seoContent = getToolSEOContent("pdf-to-excel");
   const relatedTools = getRelatedTools("pdf-to-excel");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [excelGenerated, setExcelGenerated] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
+      setExcelGenerated(false);
+    }
+  };
+
+  const handleConvertToExcel = async () => {
+    if (!selectedFile) {
+      return;
+    }
+
+    setIsProcessing(true);
+    setExcelGenerated(false);
+
+    try {
+      const arrayBuffer = await selectedFile.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      
+      // Extract text from all pages
+      const allText: string[][] = [];
+      
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        
+        // Group text items by line
+        const lines: string[] = [];
+        let currentLine = "";
+        
+        textContent.items.forEach((item: any) => {
+          if (item.str) {
+            currentLine += item.str + " ";
+          }
+          // Simple heuristic: if transform indicates new line
+          if (item.hasEOL) {
+            lines.push(currentLine.trim());
+            currentLine = "";
+          }
+        });
+        
+        if (currentLine.trim()) {
+          lines.push(currentLine.trim());
+        }
+        
+        // Split lines into columns (simple space-based splitting)
+        lines.forEach((line) => {
+          if (line.trim()) {
+            // Try to split by multiple spaces or tabs
+            const columns = line.split(/\s{2,}|\t/).filter(col => col.trim());
+            if (columns.length > 0) {
+              allText.push(columns);
+            } else {
+              allText.push([line]);
+            }
+          }
+        });
+      }
+      
+      // Create Excel workbook
+      const worksheet = XLSX.utils.aoa_to_sheet(allText);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+      
+      // Generate Excel file
+      const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      
+      // Download
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `converted-${selectedFile.name.replace(/\.[^/.]+$/, "")}.xlsx`;
+      link.click();
+      URL.revokeObjectURL(url);
+      
+      setExcelGenerated(true);
+    } catch (error) {
+      console.error("Error converting PDF to Excel:", error);
+      alert("Failed to convert PDF to Excel. Please make sure the file is a valid PDF with extractable text.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -33,14 +122,16 @@ export default function PDFToExcelClient() {
           <p className="text-slate-600">Convert PDF tables to Excel spreadsheets (XLSX)</p>
         </div>
 
-        {/* Info Alert */}
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-          <div className="text-sm text-blue-900">
-            <p className="font-semibold mb-1">Note:</p>
-            <p>PDF to Excel conversion requires table detection and OCR. This is a UI demo. For full functionality, integrate with APIs like Tabula, Camelot, or Adobe PDF Services.</p>
+        {/* Success Alert */}
+        {excelGenerated && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
+            <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+            <div className="text-sm text-green-900">
+              <p className="font-semibold mb-1">Excel Generated Successfully!</p>
+              <p>Your PDF text has been extracted and converted to Excel. Note: Complex table structures may require manual adjustment.</p>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="space-y-6">
           {/* Upload Section */}
@@ -69,13 +160,24 @@ export default function PDFToExcelClient() {
           {selectedFile && (
             <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
               <button
-                disabled
-                className="w-full rounded-lg border-2 border-slate-300 bg-slate-200 px-6 py-3 font-semibold text-slate-500 cursor-not-allowed shadow-sm"
+                onClick={handleConvertToExcel}
+                disabled={isProcessing}
+                className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 border-2 border-indigo-700 hover:border-indigo-800 px-6 py-3 font-semibold text-white transition-all shadow-sm hover:shadow-md disabled:bg-slate-200 disabled:border-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Convert to Excel (Demo Mode)
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Converting to Excel...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileSpreadsheet className="h-5 w-5" />
+                    <span>Convert to Excel</span>
+                  </>
+                )}
               </button>
               <p className="mt-3 text-center text-sm text-slate-500">
-                Integration with conversion API required for actual conversion
+                Extracting text from PDF and converting to Excel format
               </p>
             </div>
           )}
