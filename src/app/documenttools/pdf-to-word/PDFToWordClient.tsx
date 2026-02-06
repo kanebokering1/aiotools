@@ -5,18 +5,86 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { FileEdit, Upload, AlertCircle } from "lucide-react";
+import { FileEdit, Upload, Download, Loader2, CheckCircle } from "lucide-react";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Dynamic import for PDF.js to avoid SSR issues
+let pdfjsLibModule: any = null;
+if (typeof window !== "undefined") {
+  import("pdfjs-dist").then((module) => {
+    pdfjsLibModule = module;
+    pdfjsLibModule.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLibModule.version}/pdf.worker.min.js`;
+  });
+}
 
 export default function PDFToWordClient() {
   const seoContent = getToolSEOContent("pdf-to-word");
   const relatedTools = getRelatedTools("pdf-to-word");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [wordGenerated, setWordGenerated] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
+      setWordGenerated(false);
+    }
+  };
+
+  const handleConvertToWord = async () => {
+    if (!selectedFile) {
+      return;
+    }
+
+    setIsProcessing(true);
+    setWordGenerated(false);
+
+    try {
+      // Dynamic import PDF.js if not loaded
+      if (!pdfjsLibModule) {
+        const module = await import("pdfjs-dist");
+        pdfjsLibModule = module;
+        pdfjsLibModule.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLibModule.version}/pdf.worker.min.js`;
+      }
+
+      const arrayBuffer = await selectedFile.arrayBuffer();
+      const pdf = await pdfjsLibModule.getDocument({ data: arrayBuffer }).promise;
+      
+      // Extract text from all pages
+      let allText = "";
+      
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(" ");
+        
+        allText += pageText + "\n\n";
+      }
+      
+      // Create a simple DOCX-like content (actually RTF format which Word can open)
+      // For a proper DOCX, we'd need a library, but RTF is simpler and works
+      const rtfContent = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}} \\f0\\fs24 ${allText.replace(/\n/g, "\\par ").replace(/[{}]/g, "")}}`;
+      
+      // Create blob and download
+      const blob = new Blob([rtfContent], { type: "application/rtf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `converted-${selectedFile.name.replace(/\.[^/.]+$/, "")}.rtf`;
+      link.click();
+      URL.revokeObjectURL(url);
+      
+      setWordGenerated(true);
+    } catch (error) {
+      console.error("Error converting PDF to Word:", error);
+      alert("Failed to convert PDF to Word. Please make sure the file is a valid PDF with extractable text.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -33,14 +101,16 @@ export default function PDFToWordClient() {
           <p className="text-slate-600">Convert PDF files to editable Word documents (DOCX)</p>
         </div>
 
-        {/* Info Alert */}
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-          <div className="text-sm text-blue-900">
-            <p className="font-semibold mb-1">Note:</p>
-            <p>PDF to Word conversion requires OCR and document processing. This is a UI demo. For full functionality, integrate with APIs like pdf2docx, CloudConvert, or Adobe PDF Services.</p>
+        {/* Success Alert */}
+        {wordGenerated && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
+            <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+            <div className="text-sm text-green-900">
+              <p className="font-semibold mb-1">Word Document Generated Successfully!</p>
+              <p>Text has been extracted from PDF and saved as RTF format (compatible with Word). Note: Complex formatting may not be preserved.</p>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="space-y-6">
           {/* Upload Section */}
@@ -69,13 +139,24 @@ export default function PDFToWordClient() {
           {selectedFile && (
             <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
               <button
-                disabled
-                className="w-full rounded-lg border-2 border-slate-300 bg-slate-200 px-6 py-3 font-semibold text-slate-500 cursor-not-allowed shadow-sm"
+                onClick={handleConvertToWord}
+                disabled={isProcessing}
+                className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 border-2 border-indigo-700 hover:border-indigo-800 px-6 py-3 font-semibold text-white transition-all shadow-sm hover:shadow-md disabled:bg-slate-200 disabled:border-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Convert to Word (Demo Mode)
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Converting to Word...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileEdit className="h-5 w-5" />
+                    <span>Convert to Word</span>
+                  </>
+                )}
               </button>
               <p className="mt-3 text-center text-sm text-slate-500">
-                Integration with conversion API required for actual conversion
+                Extracting text from PDF and converting to Word-compatible format (RTF)
               </p>
             </div>
           )}
