@@ -233,8 +233,8 @@ export default function QRCodeGeneratorClient() {
                 >
                   {isGenerating ? (
                     <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span>Generating...</span>
+                      <LoadingAnimation size="sm" message="" />
+                      <span>Processing...</span>
                     </>
                   ) : (
                     <>
@@ -267,18 +267,7 @@ export default function QRCodeGeneratorClient() {
               <div className="flex flex-col items-center">
                 {isGenerating ? (
                   <div className="flex h-64 flex-col items-center justify-center rounded-lg bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 w-full">
-                    <Loader2 className="h-12 w-12 animate-spin text-purple-600 mb-4" />
-                    <p className="text-lg font-semibold text-gray-900 mb-2">
-                      Generating QR Code...
-                    </p>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Please wait while we create your QR code
-                    </p>
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-purple-600" style={{ animationDelay: '0ms' }}></div>
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-purple-600" style={{ animationDelay: '150ms' }}></div>
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-purple-600" style={{ animationDelay: '300ms' }}></div>
-                    </div>
+                    <LoadingAnimation message="Generating QR code..." size="lg" />
                   </div>
                 ) : qrCodeUrl ? (
                   <>

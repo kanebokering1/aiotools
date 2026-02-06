@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Upload, Download, AlertCircle, CheckCircle, Loader2, Scissors } from "lucide-react";
+import { FileText, Upload, Download, AlertCircle, CheckCircle, Scissors, Eye } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
 import ShareButtons from "@/components/ShareButtons";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { PDFDocument } from "pdf-lib";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
@@ -257,8 +258,8 @@ export default function PDFSplitClient() {
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Splitting...
+                    <LoadingAnimation size="sm" message="" />
+                    <span>Processing...</span>
                   </>
                 ) : (
                   <>
@@ -293,20 +294,7 @@ export default function PDFSplitClient() {
               {/* Processing Overlay */}
               {isProcessing && (
                 <div className="mt-4 rounded-xl bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 p-8">
-                  <div className="flex flex-col items-center justify-center text-center">
-                    <Loader2 className="h-12 w-12 animate-spin text-red-600 mb-4" />
-                    <p className="text-lg font-semibold text-gray-900 mb-2">
-                      Splitting Your PDF...
-                    </p>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Please wait while we process your PDF file
-                    </p>
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-red-600" style={{ animationDelay: '0ms' }}></div>
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-red-600" style={{ animationDelay: '150ms' }}></div>
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-red-600" style={{ animationDelay: '300ms' }}></div>
-                    </div>
-                  </div>
+                  <LoadingAnimation message="Splitting your PDF file..." size="lg" />
                 </div>
               )}
 

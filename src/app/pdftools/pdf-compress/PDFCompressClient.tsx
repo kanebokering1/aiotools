@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Download, AlertCircle, CheckCircle, Loader2, Minimize2 } from "lucide-react";
+import { Upload, Download, AlertCircle, CheckCircle, Minimize2, Eye } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
 import ShareButtons from "@/components/ShareButtons";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { PDFDocument } from "pdf-lib";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
@@ -234,8 +235,8 @@ export default function PDFCompressClient() {
               >
                 {isCompressing ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Compressing...
+                    <LoadingAnimation size="sm" message="" />
+                    <span>Processing...</span>
                   </>
                 ) : (
                   <>
@@ -257,29 +258,29 @@ export default function PDFCompressClient() {
               {/* Processing Overlay */}
               {isCompressing && (
                 <div className="mt-4 rounded-xl bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 p-8">
-                  <div className="flex flex-col items-center justify-center text-center">
-                    <Loader2 className="h-12 w-12 animate-spin text-red-600 mb-4" />
-                    <p className="text-lg font-semibold text-gray-900 mb-2">
-                      Compressing Your PDF...
-                    </p>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Please wait while we optimize your PDF file size
-                    </p>
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-red-600" style={{ animationDelay: '0ms' }}></div>
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-red-600" style={{ animationDelay: '150ms' }}></div>
-                      <div className="h-2 w-2 animate-bounce rounded-full bg-red-600" style={{ animationDelay: '300ms' }}></div>
-                    </div>
-                  </div>
+                  <LoadingAnimation message="Compressing your PDF file..." size="lg" />
                 </div>
               )}
 
-              {success && (
+              {success && compressedUrl && (
                 <div className="rounded-md bg-green-50 p-4 border border-green-200">
                   <div className="space-y-3">
                     <div className="flex">
                       <CheckCircle className="h-5 w-5 text-green-400" />
                       <div className="ml-3"><p className="text-sm text-green-800">{success}</p></div>
+                    </div>
+                    
+                    {/* Preview */}
+                    <div className="bg-white p-3 rounded-md border border-green-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Eye className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-green-800">Preview</span>
+                      </div>
+                      <iframe
+                        src={compressedUrl}
+                        className="w-full h-64 rounded border border-green-200"
+                        title="Compressed PDF Preview"
+                      />
                     </div>
                     
                     <div className="bg-green-100 p-3 rounded-md">
