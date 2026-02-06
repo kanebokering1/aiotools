@@ -189,18 +189,7 @@ export default function ImageCompressorClient() {
                   </h3>
                   {isCompressing ? (
                     <div className="flex h-48 flex-col items-center justify-center rounded-lg border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50">
-                      <LoadingAnimation size="md" message="Compressing image..." />
-                      <p className="text-sm font-semibold text-gray-900 mb-1">
-                        Compressing Image...
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        Please wait, this may take a few seconds
-                      </p>
-                      <div className="flex items-center justify-center gap-2 mt-3">
-                        <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: '0ms' }}></div>
-                        <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: '150ms' }}></div>
-                        <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: '300ms' }}></div>
-                      </div>
+                      <LoadingAnimation message="Compressing image..." size="md" />
                     </div>
                   ) : compressedUrl ? (
                     <>
