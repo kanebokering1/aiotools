@@ -5,9 +5,10 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { Upload, Download, Sparkles, Trash2, Loader2 } from "lucide-react";
+import { Upload, Download, Sparkles, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { removeBackground } from "@imgly/background-removal";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
 
@@ -212,7 +213,7 @@ export default function BackgroundRemoverClient() {
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <LoadingAnimation size="sm" message="" />
                     <span>Processing...</span>
                   </>
                 ) : (
@@ -253,22 +254,7 @@ export default function BackgroundRemoverClient() {
                 <div className="rounded-lg border border-gray-200 p-4 relative">
                   {isProcessing ? (
                     <div className="flex h-64 flex-col items-center justify-center rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
-                      <div className="mb-4">
-                        <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
-                      </div>
-                      <div className="text-center">
-                        <p className="text-lg font-semibold text-gray-900 mb-2">
-                          Processing Image...
-                        </p>
-                        <p className="text-sm text-gray-600 mb-4">
-                          AI is removing the background from your image
-                        </p>
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: '0ms' }}></div>
-                          <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: '150ms' }}></div>
-                          <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: '300ms' }}></div>
-                        </div>
-                      </div>
+                      <LoadingAnimation message="AI is removing the background from your image..." size="lg" />
                     </div>
                   ) : processedImage ? (
                     <>

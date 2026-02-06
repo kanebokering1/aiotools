@@ -5,7 +5,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { Headphones, Upload, Download, Loader2, CheckCircle } from "lucide-react";
+import { Headphones, Upload, Download, CheckCircle } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
 // Dynamic import for FFmpeg to avoid SSR issues
@@ -161,7 +162,7 @@ export default function AudioConverterClient() {
         {/* Loading FFmpeg Alert */}
         {isLoadingFFmpeg && (
           <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
-            <Loader2 className="h-5 w-5 text-blue-600 mt-0.5 animate-spin" />
+            <LoadingAnimation size="sm" message="" />
             <div className="text-sm text-blue-900">
               <p className="font-semibold mb-1">Loading Audio Converter...</p>
               <p>Please wait while we load the audio conversion engine. This may take a few seconds.</p>
@@ -240,13 +241,13 @@ export default function AudioConverterClient() {
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Converting...</span>
+                    <LoadingAnimation size="sm" message="" />
+                    <span>Processing...</span>
                   </>
                 ) : isLoadingFFmpeg ? (
                   <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Loading Converter...</span>
+                    <LoadingAnimation size="sm" message="" />
+                    <span>Loading...</span>
                   </>
                 ) : (
                   <>
