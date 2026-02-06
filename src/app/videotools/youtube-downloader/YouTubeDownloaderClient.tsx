@@ -74,11 +74,9 @@ export default function YouTubeDownloaderClient() {
         throw new Error(data.error || "Failed to get video information");
       }
       
-      // Check if using fallback (oEmbed)
-      if (data.fallback) {
-        // Show warning that download may not be available
-        setError(data.message || "Limited information available. Download may not be available due to YouTube restrictions.");
-      }
+      // Clear any previous errors when we successfully get video info
+      // (even if it's fallback mode, we still have video info)
+      setError(null);
       
       // Format duration
       const formatDuration = (seconds: number) => {
