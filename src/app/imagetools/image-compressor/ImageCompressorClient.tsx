@@ -189,7 +189,7 @@ export default function ImageCompressorClient() {
                   </h3>
                   {isCompressing ? (
                     <div className="flex h-48 flex-col items-center justify-center rounded-lg border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50">
-                      <Loader2 className="h-10 w-10 animate-spin text-blue-600 mb-3" />
+                      <LoadingAnimation size="md" message="Compressing image..." />
                       <p className="text-sm font-semibold text-gray-900 mb-1">
                         Compressing Image...
                       </p>
