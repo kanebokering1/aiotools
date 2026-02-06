@@ -8,8 +8,20 @@ import RelatedTools from "@/components/RelatedTools";
 import { Volume2, Upload, Download, Loader2, CheckCircle } from "lucide-react";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
-import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile, toBlobURL } from "@ffmpeg/util";
+// Dynamic import for FFmpeg to avoid SSR issues
+let FFmpegClass: any = null;
+let fetchFileUtil: any = null;
+let toBlobURLUtil: any = null;
+
+if (typeof window !== "undefined") {
+  import("@ffmpeg/ffmpeg").then((module) => {
+    FFmpegClass = module.FFmpeg;
+  });
+  import("@ffmpeg/util").then((module) => {
+    fetchFileUtil = module.fetchFile;
+    toBlobURLUtil = module.toBlobURL;
+  });
+}
 
 export default function VideoToAudioClient() {
   const seoContent = getToolSEOContent("video-to-audio");
@@ -20,21 +32,34 @@ export default function VideoToAudioClient() {
   const [isLoadingFFmpeg, setIsLoadingFFmpeg] = useState(false);
   const [extractedUrl, setExtractedUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const ffmpegRef = useRef(new FFmpeg());
+  const ffmpegRef = useRef<any>(null);
   const loadedRef = useRef(false);
 
   useEffect(() => {
     const loadFFmpeg = async () => {
-      if (loadedRef.current) return;
+      if (loadedRef.current || typeof window === "undefined") return;
       
       setIsLoadingFFmpeg(true);
-      const ffmpeg = ffmpegRef.current;
       
       try {
+        // Dynamic import FFmpeg
+        if (!FFmpegClass) {
+          const ffmpegModule = await import("@ffmpeg/ffmpeg");
+          FFmpegClass = ffmpegModule.FFmpeg;
+        }
+        if (!fetchFileUtil || !toBlobURLUtil) {
+          const utilModule = await import("@ffmpeg/util");
+          fetchFileUtil = utilModule.fetchFile;
+          toBlobURLUtil = utilModule.toBlobURL;
+        }
+        
+        const ffmpeg = new FFmpegClass();
+        ffmpegRef.current = ffmpeg;
+        
         const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
         await ffmpeg.load({
-          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+          coreURL: await toBlobURLUtil(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
+          wasmURL: await toBlobURLUtil(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
         });
         loadedRef.current = true;
       } catch (err) {
@@ -72,7 +97,7 @@ export default function VideoToAudioClient() {
       const outputFileName = `output.${outputFormat}`;
 
       // Write input file to FFmpeg
-      await ffmpeg.writeFile(inputFileName, await fetchFile(selectedFile));
+      await ffmpeg.writeFile(inputFileName, await fetchFileUtil(selectedFile));
 
       // Extract audio from video
       const args = ["-i", inputFileName];
