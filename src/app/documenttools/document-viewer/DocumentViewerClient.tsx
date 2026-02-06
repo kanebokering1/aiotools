@@ -5,7 +5,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { Eye, Upload, Loader2 } from "lucide-react";
+import { Eye, Upload } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
 // Dynamic import for PDF.js to avoid SSR issues
@@ -195,7 +196,7 @@ export default function DocumentViewerClient() {
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                 {isLoading && (
                   <div className="flex items-center justify-center py-20">
-                    <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+                    <LoadingAnimation size="md" message="Loading PDF..." />
                   </div>
                 )}
                 {selectedFile.type === "application/pdf" && !isLoading && (

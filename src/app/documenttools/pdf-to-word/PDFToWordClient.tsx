@@ -5,7 +5,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { FileEdit, Upload, Download, Loader2, CheckCircle } from "lucide-react";
+import { FileEdit, Upload, Download, CheckCircle } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
 import * as pdfjsLib from "pdfjs-dist";
@@ -145,8 +146,8 @@ export default function PDFToWordClient() {
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Converting to Word...</span>
+                    <LoadingAnimation size="sm" message="" />
+                    <span>Processing...</span>
                   </>
                 ) : (
                   <>

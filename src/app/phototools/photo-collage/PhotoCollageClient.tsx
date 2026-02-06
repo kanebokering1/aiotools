@@ -5,7 +5,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { Grid3x3, Upload, Download, Loader2, CheckCircle } from "lucide-react";
+import { Grid3x3, Upload, Download, CheckCircle } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
 
@@ -166,8 +167,8 @@ export default function PhotoCollageClient() {
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span>Creating Collage...</span>
+                      <LoadingAnimation size="sm" message="" />
+                      <span>Processing...</span>
                     </>
                   ) : (
                     <>
