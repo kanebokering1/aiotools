@@ -19,6 +19,7 @@ export default function PDFWatermarkClient() {
   const [watermarkPosition, setWatermarkPosition] = useState<string>("center");
   const [isProcessing, setIsProcessing] = useState(false);
   const [processedPdf, setProcessedPdf] = useState<Uint8Array | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -32,13 +33,53 @@ export default function PDFWatermarkClient() {
       return;
     }
 
+    // Validate file type
+    if (selectedFile.type !== "application/pdf" && !selectedFile.name.toLowerCase().endsWith(".pdf")) {
+      alert("Please select a valid PDF file.");
+      return;
+    }
+
+    // Validate file size (max 50MB)
+    if (selectedFile.size > 50 * 1024 * 1024) {
+      alert("File size is too large. Please use a PDF file smaller than 50MB.");
+      return;
+    }
+
     setIsProcessing(true);
     setProcessedPdf(null);
+    setError(null);
 
     try {
       // Read PDF file
       const arrayBuffer = await selectedFile.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
+      
+      // Validate PDF file (check if it starts with PDF header)
+      const uint8Array = new Uint8Array(arrayBuffer);
+      if (uint8Array.length < 4) {
+        throw new Error("File is too small to be a valid PDF.");
+      }
+      
+      const pdfHeader = String.fromCharCode(...uint8Array.slice(0, 4));
+      if (pdfHeader !== "%PDF") {
+        throw new Error("Invalid PDF file format. The file does not appear to be a valid PDF. Please make sure you're uploading a PDF file.");
+      }
+      
+      // Try to load PDF with better error handling
+      let pdfDoc;
+      try {
+        pdfDoc = await PDFDocument.load(arrayBuffer, {
+          ignoreEncryption: false, // Don't ignore encryption - will throw error if encrypted
+        });
+      } catch (loadError: any) {
+        // Check for specific error types
+        if (loadError.message?.includes("encrypted") || loadError.message?.includes("password")) {
+          throw new Error("This PDF is password-protected. Please remove the password and try again.");
+        } else if (loadError.message?.includes("corrupted") || loadError.message?.includes("corrupt")) {
+          throw new Error("The PDF file appears to be corrupted or damaged. Please try a different file.");
+        } else {
+          throw new Error(`Failed to load PDF: ${loadError.message || "Unknown error"}`);
+        }
+      }
 
       // Get font
       const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -103,9 +144,26 @@ export default function PDFWatermarkClient() {
       // Save PDF
       const pdfBytes = await pdfDoc.save();
       setProcessedPdf(pdfBytes);
-    } catch (error) {
+      setError(null);
+    } catch (error: any) {
       console.error("Error adding watermark:", error);
-      alert("Failed to add watermark. Please make sure the file is a valid PDF.");
+      
+      // Provide more specific error messages
+      let errorMessage = "Failed to add watermark. ";
+      
+      if (error.message?.includes("encrypted") || error.message?.includes("password")) {
+        errorMessage += "This PDF is password-protected. Please remove the password first.";
+      } else if (error.message?.includes("Invalid PDF")) {
+        errorMessage += "The file is not a valid PDF file.";
+      } else if (error.message?.includes("corrupted") || error.message?.includes("corrupt")) {
+        errorMessage += "The PDF file appears to be corrupted. Please try a different file.";
+      } else if (error.message) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += "Please make sure the file is a valid, unencrypted PDF.";
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -143,6 +201,16 @@ export default function PDFWatermarkClient() {
             <div className="text-sm text-green-900">
               <p className="font-semibold mb-1">Watermark Added Successfully!</p>
               <p>Your PDF has been watermarked. Click the download button to save it.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error Alert */}
+        {error && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+            <div className="text-sm text-red-900">
+              <p className="font-semibold mb-1">Error:</p>
+              <p>{error}</p>
             </div>
           </div>
         )}
