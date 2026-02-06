@@ -5,10 +5,11 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { Stamp, Upload, Download, Loader2, CheckCircle } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
+import { Stamp, Upload, Download, CheckCircle, Eye } from "lucide-react";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts, degrees } from "pdf-lib";
 
 export default function PDFWatermarkClient() {
   const seoContent = getToolSEOContent("pdf-watermark");
@@ -19,6 +20,7 @@ export default function PDFWatermarkClient() {
   const [watermarkPosition, setWatermarkPosition] = useState<string>("center");
   const [isProcessing, setIsProcessing] = useState(false);
   const [processedPdf, setProcessedPdf] = useState<Uint8Array | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,6 +133,9 @@ export default function PDFWatermarkClient() {
 
         // Add watermark with opacity
         const opacity = watermarkOpacity / 100;
+        
+        // Draw watermark text with rotation using degrees() helper from pdf-lib
+        // Rotate -45 degrees for diagonal watermark effect
         page.drawText(watermarkText, {
           x: x,
           y: y,
@@ -138,13 +143,19 @@ export default function PDFWatermarkClient() {
           font: font,
           color: rgb(0.5, 0.5, 0.5), // Gray color
           opacity: opacity,
-          rotate: { angleInRadians: -0.785 }, // 45 degrees rotation
+          rotate: degrees(-45), // Rotate -45 degrees (diagonal watermark)
         });
       });
 
       // Save PDF
       const pdfBytes = await pdfDoc.save();
       setProcessedPdf(pdfBytes);
+      
+      // Create preview URL
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      setPreviewUrl(url);
+      
       setError(null);
     } catch (error: any) {
       console.error("Error adding watermark:", error);
@@ -298,8 +309,8 @@ export default function PDFWatermarkClient() {
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span>Adding Watermark...</span>
+                      <LoadingAnimation size="sm" message="" />
+                      <span>Processing...</span>
                     </>
                   ) : (
                     <>
@@ -310,8 +321,27 @@ export default function PDFWatermarkClient() {
                 </button>
               </div>
 
-              {processedPdf && (
+              {/* Processing Overlay */}
+              {isProcessing && (
                 <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+                  <LoadingAnimation message="Adding watermark to your PDF..." size="md" />
+                </div>
+              )}
+
+              {/* Preview Section */}
+              {processedPdf && previewUrl && !isProcessing && (
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+                  <h2 className="mb-4 text-lg font-semibold text-slate-900 flex items-center gap-2">
+                    <Eye className="h-5 w-5 text-violet-600" />
+                    Preview
+                  </h2>
+                  <div className="mb-4 rounded-lg border border-slate-200 overflow-hidden">
+                    <iframe
+                      src={previewUrl}
+                      className="w-full h-96"
+                      title="PDF Preview"
+                    />
+                  </div>
                   <button
                     onClick={handleDownload}
                     className="w-full rounded-lg bg-green-600 hover:bg-green-700 border-2 border-green-700 hover:border-green-800 px-6 py-3 font-semibold text-white transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2"

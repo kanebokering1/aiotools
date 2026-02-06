@@ -6,7 +6,8 @@ import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
 import ShareButtons from "@/components/ShareButtons";
-import { Upload, Download, FileText, X, Plus, Loader2 } from "lucide-react";
+import { Upload, Download, FileText, X, Plus, Eye } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import Link from "next/link";
 import { PDFDocument } from "pdf-lib";
 import { getToolSEOContent } from "@/lib/seo-content";
@@ -339,8 +340,8 @@ export default function PDFMergeClient() {
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Merging PDFs...</span>
+                    <LoadingAnimation size="sm" message="" />
+                    <span>Processing...</span>
                   </>
                 ) : (
                   <>
@@ -354,27 +355,17 @@ export default function PDFMergeClient() {
             {/* Processing Overlay */}
             {isProcessing && (
               <div className="mt-6 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 p-8">
-                <div className="flex flex-col items-center justify-center text-center">
-                  <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-                  <p className="text-lg font-semibold text-gray-900 mb-2">
-                    Merging Your PDFs...
-                  </p>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Please wait while we combine {pdfFiles.length} PDF file{pdfFiles.length > 1 ? 's' : ''}
-                  </p>
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: '0ms' }}></div>
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: '150ms' }}></div>
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: '300ms' }}></div>
-                  </div>
-                </div>
+                <LoadingAnimation 
+                  message={`Merging ${pdfFiles.length} PDF file${pdfFiles.length > 1 ? 's' : ''}...`} 
+                  size="lg" 
+                />
               </div>
             )}
           </div>
         )}
 
-        {/* Download Result */}
-        {mergedPdfUrl && (
+        {/* Preview & Download Result */}
+        {mergedPdfUrl && !isProcessing && (
           <div className="mb-8 rounded-xl bg-green-50 border border-green-200 p-6">
             <div className="flex items-center gap-4 mb-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
@@ -388,6 +379,19 @@ export default function PDFMergeClient() {
                   Your merged PDF is ready for download.
                 </p>
               </div>
+            </div>
+            
+            {/* Preview */}
+            <div className="mb-4 rounded-lg border border-green-200 overflow-hidden bg-white">
+              <div className="bg-green-50 px-4 py-2 border-b border-green-200 flex items-center gap-2">
+                <Eye className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium text-green-800">Preview</span>
+              </div>
+              <iframe
+                src={mergedPdfUrl}
+                className="w-full h-96"
+                title="Merged PDF Preview"
+              />
             </div>
             
             <button
