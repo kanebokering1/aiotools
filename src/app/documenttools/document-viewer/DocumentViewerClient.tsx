@@ -8,11 +8,13 @@ import RelatedTools from "@/components/RelatedTools";
 import { Eye, Upload, Loader2 } from "lucide-react";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
-import * as pdfjsLib from "pdfjs-dist";
-
-// Set worker
+// Dynamic import for PDF.js to avoid SSR issues
+let pdfjsLib: any = null;
 if (typeof window !== "undefined") {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+  import("pdfjs-dist").then((module) => {
+    pdfjsLib = module;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+  });
 }
 
 export default function DocumentViewerClient() {
@@ -39,6 +41,13 @@ export default function DocumentViewerClient() {
       if (file.type === "application/pdf") {
         setIsLoading(true);
         try {
+          // Dynamic import PDF.js if not loaded
+          if (!pdfjsLib) {
+            const module = await import("pdfjs-dist");
+            pdfjsLib = module;
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+          }
+          
           const arrayBuffer = await file.arrayBuffer();
           const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
           setTotalPages(pdf.numPages);
@@ -93,6 +102,13 @@ export default function DocumentViewerClient() {
 
     setIsLoading(true);
     try {
+      // Dynamic import PDF.js if not loaded
+      if (!pdfjsLib) {
+        const module = await import("pdfjs-dist");
+        pdfjsLib = module;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      }
+      
       const arrayBuffer = await selectedFile.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       const page = await pdf.getPage(pageNum);

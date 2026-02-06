@@ -1,24 +1,123 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { Headphones, Upload, Download, AlertCircle } from "lucide-react";
+import { Headphones, Upload, Download, Loader2, CheckCircle } from "lucide-react";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
+import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile, toBlobURL } from "@ffmpeg/util";
 
 export default function AudioConverterClient() {
   const seoContent = getToolSEOContent("audio-converter");
   const relatedTools = getRelatedTools("audio-converter");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [outputFormat, setOutputFormat] = useState<string>("mp3");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoadingFFmpeg, setIsLoadingFFmpeg] = useState(false);
+  const [convertedUrl, setConvertedUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const ffmpegRef = useRef(new FFmpeg());
+  const loadedRef = useRef(false);
+
+  useEffect(() => {
+    const loadFFmpeg = async () => {
+      if (loadedRef.current) return;
+      
+      setIsLoadingFFmpeg(true);
+      const ffmpeg = ffmpegRef.current;
+      
+      try {
+        const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
+        await ffmpeg.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+        });
+        loadedRef.current = true;
+      } catch (err) {
+        console.error("Failed to load FFmpeg:", err);
+        setError("Failed to load audio converter. Please refresh the page.");
+      } finally {
+        setIsLoadingFFmpeg(false);
+      }
+    };
+
+    loadFFmpeg();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
+      setConvertedUrl(null);
+      setError(null);
     }
+  };
+
+  const handleConvert = async () => {
+    if (!selectedFile || !loadedRef.current) {
+      setError("Please wait for converter to load or select a file.");
+      return;
+    }
+
+    setIsProcessing(true);
+    setError(null);
+    setConvertedUrl(null);
+
+    try {
+      const ffmpeg = ffmpegRef.current;
+      const inputFileName = "input." + selectedFile.name.split(".").pop();
+      const outputFileName = `output.${outputFormat}`;
+
+      // Write input file to FFmpeg
+      await ffmpeg.writeFile(inputFileName, await fetchFile(selectedFile));
+
+      // Convert audio
+      const args = ["-i", inputFileName];
+      
+      // Add format-specific arguments
+      if (outputFormat === "mp3") {
+        args.push("-acodec", "libmp3lame", "-b:a", "192k");
+      } else if (outputFormat === "wav") {
+        args.push("-acodec", "pcm_s16le");
+      } else if (outputFormat === "ogg") {
+        args.push("-acodec", "libvorbis");
+      } else if (outputFormat === "m4a") {
+        args.push("-acodec", "aac", "-b:a", "192k");
+      } else if (outputFormat === "flac") {
+        args.push("-acodec", "flac");
+      }
+
+      args.push(outputFileName);
+
+      await ffmpeg.exec(args);
+
+      // Read output file
+      const data = await ffmpeg.readFile(outputFileName);
+      const blob = new Blob([data], { type: `audio/${outputFormat}` });
+      const url = URL.createObjectURL(blob);
+      setConvertedUrl(url);
+
+      // Cleanup
+      await ffmpeg.deleteFile(inputFileName);
+      await ffmpeg.deleteFile(outputFileName);
+    } catch (err: any) {
+      console.error("Conversion error:", err);
+      setError(err.message || "Failed to convert audio. Please try a different file or format.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!convertedUrl || !selectedFile) return;
+
+    const link = document.createElement("a");
+    link.href = convertedUrl;
+    link.download = `converted.${outputFormat}`;
+    link.click();
   };
 
   return (
@@ -34,14 +133,37 @@ export default function AudioConverterClient() {
           <p className="text-slate-600">Convert audio files between MP3, WAV, OGG, and more formats</p>
         </div>
 
-        {/* Info Alert */}
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-          <div className="text-sm text-blue-900">
-            <p className="font-semibold mb-1">Note:</p>
-            <p>Audio conversion requires backend processing. This is a UI demo. For full functionality, integrate with an audio processing API like CloudConvert or FFmpeg.js.</p>
+        {/* Loading FFmpeg Alert */}
+        {isLoadingFFmpeg && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <Loader2 className="h-5 w-5 text-blue-600 mt-0.5 animate-spin" />
+            <div className="text-sm text-blue-900">
+              <p className="font-semibold mb-1">Loading Audio Converter...</p>
+              <p>Please wait while we load the audio conversion engine. This may take a few seconds.</p>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Success Alert */}
+        {convertedUrl && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
+            <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+            <div className="text-sm text-green-900">
+              <p className="font-semibold mb-1">Conversion Successful!</p>
+              <p>Your audio has been converted. Click the download button to save it.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error Alert */}
+        {error && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+            <div className="text-sm text-red-900">
+              <p className="font-semibold mb-1">Error:</p>
+              <p>{error}</p>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-6">
           {/* Upload Section */}
@@ -87,11 +209,37 @@ export default function AudioConverterClient() {
               </div>
 
               <button
-                disabled
-                className="mt-6 w-full rounded-lg border-2 border-slate-300 bg-slate-200 px-6 py-3 font-semibold text-slate-500 cursor-not-allowed shadow-sm"
+                onClick={handleConvert}
+                disabled={isProcessing || isLoadingFFmpeg || !loadedRef.current}
+                className="mt-6 w-full rounded-lg bg-cyan-600 hover:bg-cyan-700 border-2 border-cyan-700 hover:border-cyan-800 px-6 py-3 font-semibold text-white transition-all shadow-sm hover:shadow-md disabled:bg-slate-200 disabled:border-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Convert to {outputFormat.toUpperCase()} (Demo Mode)
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Converting...</span>
+                  </>
+                ) : isLoadingFFmpeg ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Loading Converter...</span>
+                  </>
+                ) : (
+                  <>
+                    <Headphones className="h-5 w-5" />
+                    <span>Convert to {outputFormat.toUpperCase()}</span>
+                  </>
+                )}
               </button>
+
+              {convertedUrl && (
+                <button
+                  onClick={handleDownload}
+                  className="mt-3 w-full rounded-lg bg-green-600 hover:bg-green-700 border-2 border-green-700 hover:border-green-800 px-6 py-3 font-semibold text-white transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                >
+                  <Download className="h-5 w-5" />
+                  <span>Download Converted Audio</span>
+                </button>
+              )}
             </div>
           )}
         </div>
