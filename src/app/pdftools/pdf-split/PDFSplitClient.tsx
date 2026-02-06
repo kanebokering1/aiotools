@@ -290,6 +290,26 @@ export default function PDFSplitClient() {
                 </div>
               )}
 
+              {/* Processing Overlay */}
+              {isProcessing && (
+                <div className="mt-4 rounded-xl bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 p-8">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-red-600 mb-4" />
+                    <p className="text-lg font-semibold text-gray-900 mb-2">
+                      Splitting Your PDF...
+                    </p>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Please wait while we process your PDF file
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-red-600" style={{ animationDelay: '0ms' }}></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-red-600" style={{ animationDelay: '150ms' }}></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-red-600" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {splitFiles.length > 0 && (
                 <div className="border-t pt-4">
                   <div className="flex items-center justify-between mb-4">

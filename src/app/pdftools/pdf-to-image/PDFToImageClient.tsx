@@ -261,6 +261,26 @@ export default function PDFToImageClient() {
                 </div>
               )}
 
+              {/* Processing Overlay */}
+              {isConverting && (
+                <div className="mt-4 rounded-xl bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 p-8">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-red-600 mb-4" />
+                    <p className="text-lg font-semibold text-gray-900 mb-2">
+                      Converting PDF to Images...
+                    </p>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Please wait while we convert your PDF pages to {outputFormat.toUpperCase()} format
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-red-600" style={{ animationDelay: '0ms' }}></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-red-600" style={{ animationDelay: '150ms' }}></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-red-600" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Converted Images */}
               {convertedImages.length > 0 && (
                 <div className="border-t pt-6">

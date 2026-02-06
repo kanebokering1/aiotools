@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { Upload, Download, Sparkles, Trash2 } from "lucide-react";
+import { Upload, Download, Sparkles, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { removeBackground } from "@imgly/background-removal";
 import { getToolSEOContent } from "@/lib/seo-content";
@@ -208,15 +208,18 @@ export default function BackgroundRemoverClient() {
               <button
                 onClick={removeImageBackground}
                 disabled={isProcessing}
-                className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 border-2 border-blue-700 hover:border-blue-800 px-4 py-3 font-semibold text-white transition-all shadow-sm hover:shadow-md disabled:bg-slate-200 disabled:border-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed"
+                className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 border-2 border-blue-700 hover:border-blue-800 px-4 py-3 font-semibold text-white transition-all shadow-sm hover:shadow-md disabled:bg-blue-400 disabled:border-blue-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isProcessing ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                    Removing Background...
-                  </div>
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Processing...</span>
+                  </>
                 ) : (
-                  "Remove Background"
+                  <>
+                    <Sparkles className="h-5 w-5" />
+                    <span>Remove Background</span>
+                  </>
                 )}
               </button>
             </div>
@@ -247,8 +250,27 @@ export default function BackgroundRemoverClient() {
                 <h4 className="mb-3 text-lg font-semibold text-gray-900">
                   Background Removed
                 </h4>
-                <div className="rounded-lg border border-gray-200 p-4">
-                  {processedImage ? (
+                <div className="rounded-lg border border-gray-200 p-4 relative">
+                  {isProcessing ? (
+                    <div className="flex h-64 flex-col items-center justify-center rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+                      <div className="mb-4">
+                        <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-lg font-semibold text-gray-900 mb-2">
+                          Processing Image...
+                        </p>
+                        <p className="text-sm text-gray-600 mb-4">
+                          AI is removing the background from your image
+                        </p>
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: '0ms' }}></div>
+                          <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: '150ms' }}></div>
+                          <div className="h-2 w-2 animate-bounce rounded-full bg-blue-600" style={{ animationDelay: '300ms' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : processedImage ? (
                     <>
                       <div className="relative">
                         <div className="absolute inset-0 bg-gray-100 rounded-lg opacity-50"></div>
@@ -265,7 +287,7 @@ export default function BackgroundRemoverClient() {
                       </div>
                       <button
                         onClick={downloadProcessed}
-                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-green-700"
+                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-green-700 border-2 border-green-700 hover:border-green-800 shadow-sm hover:shadow-md"
                       >
                         <Download className="h-4 w-4" />
                         Download PNG
