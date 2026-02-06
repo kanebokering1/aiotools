@@ -120,7 +120,8 @@ export default function PDFWatermarkClient() {
 
         // Calculate text width for centering
         const textWidth = font.widthOfTextAtSize(watermarkText, fontSize);
-        const textHeight = font.heightAtFontSize(fontSize);
+        // Estimate text height (approximately 1.2x font size for most fonts)
+        const textHeight = fontSize * 1.2;
 
         // Adjust x position for center alignment
         if (watermarkPosition === "center") {
