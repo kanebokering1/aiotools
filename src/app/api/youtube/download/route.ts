@@ -110,15 +110,31 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    if (error.message?.includes('Video unavailable')) {
+    if (error.message?.includes('Video unavailable') || error.message?.includes('410')) {
       return NextResponse.json(
-        { error: 'Video is unavailable or has been removed' },
+        { error: 'Video is unavailable, has been removed, or YouTube is blocking access. Please try again later or use a different video.' },
         { status: 404 }
       );
     }
 
+    // Handle 410 Gone error specifically
+    if (error.status === 410 || error.statusCode === 410 || error.message?.includes('410')) {
+      return NextResponse.json(
+        { error: 'YouTube returned error 410 (Gone). This video may be unavailable or YouTube has changed their API. Please try a different video or check back later.' },
+        { status: 410 }
+      );
+    }
+
+    // Handle ytdl-core specific errors
+    if (error.message?.includes('Status code: 410')) {
+      return NextResponse.json(
+        { error: 'YouTube is currently blocking access to this video (Error 410). This is a temporary issue. Please try again later or use a different video.' },
+        { status: 410 }
+      );
+    }
+
     return NextResponse.json(
-      { error: error.message || 'Failed to process download request' },
+      { error: error.message || 'Failed to process download request. Please try again later.' },
       { status: 500 }
     );
   }
@@ -137,17 +153,65 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    const isValid = await ytdl.validateURL(videoUrl);
-    
-    if (!isValid) {
+    // Validate video ID format
+    if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
       return NextResponse.json(
-        { error: 'Invalid YouTube URL or video not available' },
+        { error: 'Invalid video ID format' },
         { status: 400 }
       );
     }
 
-    const info = await ytdl.getInfo(videoId);
+    const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    
+    // Try ytdl-core first
+    let info;
+    let useFallback = false;
+    
+    try {
+      const isValid = await ytdl.validateURL(videoUrl);
+      
+      if (!isValid) {
+        throw new Error('Invalid YouTube URL');
+      }
+
+      info = await ytdl.getInfo(videoId);
+    } catch (ytdlError: any) {
+      console.warn('ytdl-core failed, using oEmbed fallback:', ytdlError.message);
+      
+      // Fallback to oEmbed API if ytdl-core fails (especially for 410 errors)
+      try {
+        const oEmbedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrl)}&format=json`;
+        const oEmbedResponse = await fetch(oEmbedUrl);
+        
+        if (!oEmbedResponse.ok) {
+          throw new Error(`oEmbed API returned ${oEmbedResponse.status}`);
+        }
+        
+        const oEmbedData = await oEmbedResponse.json();
+        useFallback = true;
+        
+        // Return oEmbed data in similar format
+        return NextResponse.json({
+          success: true,
+          videoId: videoId,
+          title: oEmbedData.title,
+          author: oEmbedData.author_name,
+          duration: 0, // oEmbed doesn't provide duration
+          views: "N/A", // oEmbed doesn't provide views
+          thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+          description: "",
+          availableFormats: {
+            video: [],
+            audio: []
+          },
+          fallback: true,
+          message: "Using oEmbed API (limited info). Download may not be available due to YouTube restrictions."
+        });
+      } catch (oEmbedError: any) {
+        // If both fail, throw the original ytdl error
+        throw ytdlError;
+      }
+    }
     
     // Get available formats
     const videoFormats = ytdl.filterFormats(info.formats, 'video');
@@ -178,8 +242,25 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('YouTube info error:', error);
+    
+    // Handle 410 Gone error
+    if (error.status === 410 || error.statusCode === 410 || error.message?.includes('410') || error.message?.includes('Status code: 410')) {
+      return NextResponse.json(
+        { error: 'YouTube returned error 410 (Gone). This video may be unavailable or YouTube has changed their API. Please try a different video or check back later.' },
+        { status: 410 }
+      );
+    }
+
+    // Handle video unavailable
+    if (error.message?.includes('Video unavailable') || error.message?.includes('Sign in to confirm your age')) {
+      return NextResponse.json(
+        { error: error.message || 'Video is unavailable or age-restricted' },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(
-      { error: error.message || 'Failed to get video information' },
+      { error: error.message || 'Failed to get video information. Please try again later.' },
       { status: 500 }
     );
   }

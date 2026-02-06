@@ -59,6 +59,12 @@ export default function YouTubeDownloaderClient() {
       
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Handle 410 error specifically
+        if (response.status === 410) {
+          throw new Error("YouTube returned error 410 (Gone). This video may be unavailable or YouTube is blocking access. Please try a different video or check back later.");
+        }
+        
         throw new Error(errorData.error || "Failed to fetch video information");
       }
 
@@ -68,8 +74,15 @@ export default function YouTubeDownloaderClient() {
         throw new Error(data.error || "Failed to get video information");
       }
       
+      // Check if using fallback (oEmbed)
+      if (data.fallback) {
+        // Show warning that download may not be available
+        setError(data.message || "Limited information available. Download may not be available due to YouTube restrictions.");
+      }
+      
       // Format duration
       const formatDuration = (seconds: number) => {
+        if (!seconds || seconds === 0) return "N/A";
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -79,6 +92,7 @@ export default function YouTubeDownloaderClient() {
       const formatViews = (views: string | number) => {
         if (!views || views === "N/A") return "N/A";
         const num = typeof views === 'string' ? parseInt(views) : views;
+        if (isNaN(num)) return "N/A";
         if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
         if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
         return num.toString();
@@ -88,15 +102,35 @@ export default function YouTubeDownloaderClient() {
         title: data.title,
         thumbnail: data.thumbnail || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
         videoId: videoId,
-        author: data.author,
+        author: data.author || "Unknown Channel",
         duration: data.duration ? formatDuration(data.duration) : "N/A",
         views: formatViews(data.views),
-        embedUrl: `https://www.youtube.com/embed/${videoId}`
+        embedUrl: `https://www.youtube.com/embed/${videoId}`,
+        fallback: data.fallback || false
       });
       
     } catch (err: any) {
       console.error("Error fetching video info:", err);
-      setError(err.message || "Failed to fetch video information. Please make sure the URL is correct and the video is publicly available.");
+      
+      // Provide more helpful error messages
+      let errorMessage = err.message || "Failed to fetch video information.";
+      
+      if (err.message?.includes('410')) {
+        errorMessage = "YouTube returned error 410 (Gone). This usually means:\n\n" +
+          "• The video may be unavailable or removed\n" +
+          "• YouTube may be temporarily blocking access\n" +
+          "• YouTube's API may have changed\n\n" +
+          "Please try:\n" +
+          "• A different video URL\n" +
+          "• Waiting a few minutes and trying again\n" +
+          "• Checking if the video is still available on YouTube";
+      } else if (err.message?.includes('age-restricted')) {
+        errorMessage = "This video is age-restricted and cannot be accessed.";
+      } else if (err.message?.includes('unavailable')) {
+        errorMessage = "This video is unavailable or has been removed.";
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -128,6 +162,12 @@ export default function YouTubeDownloaderClient() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Handle 410 error specifically
+        if (response.status === 410) {
+          throw new Error("YouTube returned error 410 (Gone). This video may be unavailable or YouTube is blocking access. Please try a different video or check back later.");
+        }
+        
         throw new Error(errorData.error || 'Failed to get download URL');
       }
 
@@ -151,7 +191,18 @@ export default function YouTubeDownloaderClient() {
       
     } catch (err: any) {
       console.error('Download error:', err);
-      setError(err.message || 'Failed to download. Please try again.');
+      
+      // Provide more helpful error messages
+      let errorMessage = err.message || 'Failed to download.';
+      
+      if (err.message?.includes('410')) {
+        errorMessage = "YouTube returned error 410 (Gone). This usually means YouTube is blocking access. Please try:\n\n" +
+          "• A different video\n" +
+          "• Waiting a few minutes\n" +
+          "• Checking if the video is still available";
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsDownloading(null);
     }
@@ -290,6 +341,24 @@ export default function YouTubeDownloaderClient() {
               </div>
             </div>
 
+            {/* Fallback Warning */}
+            {videoInfo.fallback && (
+              <div className="mb-6 rounded-lg bg-yellow-50 border border-yellow-200 p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-semibold text-yellow-800 mb-1">
+                      Limited Information Available
+                    </p>
+                    <p className="text-yellow-700">
+                      YouTube returned error 410 (Gone). Video information is limited and download may not be available. 
+                      This usually happens when YouTube blocks access or changes their API. Please try a different video or check back later.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid gap-6 md:grid-cols-2">
               {/* Video Preview */}
               <div>
@@ -342,8 +411,9 @@ export default function YouTubeDownloaderClient() {
                   <div className="grid gap-2">
                     <button
                       onClick={() => handleDownload("MP4", "1080p")}
-                      disabled={isDownloading === "MP4-1080p"}
+                      disabled={isDownloading === "MP4-1080p" || videoInfo.fallback}
                       className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={videoInfo.fallback ? "Download not available in fallback mode" : ""}
                     >
                       <span>MP4 - 1080p HD</span>
                       {isDownloading === "MP4-1080p" ? (
@@ -354,8 +424,9 @@ export default function YouTubeDownloaderClient() {
                     </button>
                     <button
                       onClick={() => handleDownload("MP4", "720p")}
-                      disabled={isDownloading === "MP4-720p"}
+                      disabled={isDownloading === "MP4-720p" || videoInfo.fallback}
                       className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={videoInfo.fallback ? "Download not available in fallback mode" : ""}
                     >
                       <span>MP4 - 720p HD</span>
                       {isDownloading === "MP4-720p" ? (
@@ -366,8 +437,9 @@ export default function YouTubeDownloaderClient() {
                     </button>
                     <button
                       onClick={() => handleDownload("MP4", "480p")}
-                      disabled={isDownloading === "MP4-480p"}
+                      disabled={isDownloading === "MP4-480p" || videoInfo.fallback}
                       className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={videoInfo.fallback ? "Download not available in fallback mode" : ""}
                     >
                       <span>MP4 - 480p</span>
                       {isDownloading === "MP4-480p" ? (
@@ -385,8 +457,9 @@ export default function YouTubeDownloaderClient() {
                   <div className="grid gap-2">
                     <button
                       onClick={() => handleDownload("MP3", "320kbps")}
-                      disabled={isDownloading === "MP3-320kbps"}
+                      disabled={isDownloading === "MP3-320kbps" || videoInfo.fallback}
                       className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={videoInfo.fallback ? "Download not available in fallback mode" : ""}
                     >
                       <span>MP3 - 320 kbps</span>
                       {isDownloading === "MP3-320kbps" ? (
@@ -397,8 +470,9 @@ export default function YouTubeDownloaderClient() {
                     </button>
                     <button
                       onClick={() => handleDownload("MP3", "128kbps")}
-                      disabled={isDownloading === "MP3-128kbps"}
+                      disabled={isDownloading === "MP3-128kbps" || videoInfo.fallback}
                       className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={videoInfo.fallback ? "Download not available in fallback mode" : ""}
                     >
                       <span>MP3 - 128 kbps</span>
                       {isDownloading === "MP3-128kbps" ? (
