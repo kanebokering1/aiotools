@@ -4,9 +4,6 @@ const nextConfig = {
   images: {
     unoptimized: false, 
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     // Tambahkan ini jika ingin build tetap lanjut meski ada error type
     ignoreBuildErrors: true, 
