@@ -1,40 +1,116 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { Eye, Upload, AlertCircle } from "lucide-react";
+import { Eye, Upload, Loader2 } from "lucide-react";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Set worker
+if (typeof window !== "undefined") {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+}
 
 export default function DocumentViewerClient() {
   const seoContent = getToolSEOContent("document-viewer");
   const relatedTools = getRelatedTools("document-viewer");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [pdfPages, setPdfPages] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
+      setFilePreview(null);
+      setPdfPages([]);
+      setCurrentPage(1);
+      setTotalPages(0);
 
-      // Create preview for supported file types
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFilePreview(event.target?.result as string);
-      };
-
+      // Handle PDF files with PDF.js
       if (file.type === "application/pdf") {
-        reader.readAsDataURL(file);
-      } else if (file.type.startsWith("image/")) {
-        reader.readAsDataURL(file);
-      } else if (file.type.startsWith("text/")) {
-        reader.readAsText(file);
+        setIsLoading(true);
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          setTotalPages(pdf.numPages);
+          
+          // Render first page
+          const page = await pdf.getPage(1);
+          setPdfPages([page]);
+          renderPage(page, 1);
+        } catch (error) {
+          console.error("Error loading PDF:", error);
+          alert("Failed to load PDF. Please make sure the file is valid.");
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        // Handle other file types
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setFilePreview(event.target?.result as string);
+        };
+
+        if (file.type.startsWith("image/")) {
+          reader.readAsDataURL(file);
+        } else if (file.type.startsWith("text/")) {
+          reader.readAsText(file);
+        }
       }
     }
   };
+
+  const renderPage = async (page: any, pageNum: number) => {
+    if (!canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    const viewport = page.getViewport({ scale: 1.5 });
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    const renderContext = {
+      canvasContext: context,
+      viewport: viewport,
+    };
+
+    await page.render(renderContext).promise;
+  };
+
+  const loadPage = async (pageNum: number) => {
+    if (!selectedFile || selectedFile.type !== "application/pdf") return;
+
+    setIsLoading(true);
+    try {
+      const arrayBuffer = await selectedFile.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const page = await pdf.getPage(pageNum);
+      setPdfPages([page]);
+      setCurrentPage(pageNum);
+      await renderPage(page, pageNum);
+    } catch (error) {
+      console.error("Error loading page:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currentPage > 0 && selectedFile?.type === "application/pdf") {
+      loadPage(currentPage);
+    }
+  }, [currentPage]);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -49,14 +125,6 @@ export default function DocumentViewerClient() {
           <p className="text-slate-600">View documents, PDFs, and images online</p>
         </div>
 
-        {/* Info Alert */}
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-          <div className="text-sm text-blue-900">
-            <p className="font-semibold mb-1">Note:</p>
-            <p>This viewer supports PDF, images, and text files. For advanced document viewing with annotations, integrate with PDF.js or similar libraries.</p>
-          </div>
-        </div>
 
         <div className="space-y-6">
           {/* Upload Section */}
@@ -82,17 +150,47 @@ export default function DocumentViewerClient() {
           </div>
 
           {/* Document Preview */}
-          {filePreview && selectedFile && (
+          {(filePreview || selectedFile?.type === "application/pdf") && selectedFile && (
             <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-slate-900">Document Preview</h2>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                {selectedFile.type === "application/pdf" && (
-                  <embed src={filePreview} type="application/pdf" width="100%" height="600px" className="rounded-lg" />
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-slate-900">Document Preview</h2>
+                {selectedFile.type === "application/pdf" && totalPages > 0 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1 || isLoading}
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-sm text-slate-600">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages || isLoading}
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
                 )}
-                {selectedFile.type.startsWith("image/") && (
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                {isLoading && (
+                  <div className="flex items-center justify-center py-20">
+                    <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+                  </div>
+                )}
+                {selectedFile.type === "application/pdf" && !isLoading && (
+                  <div className="flex justify-center overflow-auto">
+                    <canvas ref={canvasRef} className="rounded-lg shadow-sm" />
+                  </div>
+                )}
+                {selectedFile.type.startsWith("image/") && filePreview && (
                   <img src={filePreview} alt="Preview" className="mx-auto max-h-96 rounded-lg" />
                 )}
-                {selectedFile.type.startsWith("text/") && (
+                {selectedFile.type.startsWith("text/") && filePreview && (
                   <pre className="max-h-96 overflow-auto rounded-lg bg-white p-4 text-sm">
                     {filePreview}
                   </pre>

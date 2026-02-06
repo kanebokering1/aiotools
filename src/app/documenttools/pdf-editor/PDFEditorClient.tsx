@@ -5,19 +5,74 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { Edit3, Upload, AlertCircle } from "lucide-react";
+import { Edit3, Upload, Download, Loader2, CheckCircle, Type, Image as ImageIcon, Highlighter } from "lucide-react";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 export default function PDFEditorClient() {
   const seoContent = getToolSEOContent("pdf-editor");
   const relatedTools = getRelatedTools("pdf-editor");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [textToAdd, setTextToAdd] = useState<string>("");
+  const [textX, setTextX] = useState<number>(50);
+  const [textY, setTextY] = useState<number>(750);
+  const [fontSize, setFontSize] = useState<number>(12);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [editedPdf, setEditedPdf] = useState<Uint8Array | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
+      setEditedPdf(null);
+      setTextToAdd("");
     }
+  };
+
+  const handleAddText = async () => {
+    if (!selectedFile || !textToAdd.trim()) {
+      return;
+    }
+
+    setIsProcessing(true);
+    setEditedPdf(null);
+
+    try {
+      const arrayBuffer = await selectedFile.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(arrayBuffer);
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const pages = pdfDoc.getPages();
+      const firstPage = pages[0];
+
+      // Add text to first page
+      firstPage.drawText(textToAdd, {
+        x: textX,
+        y: textY,
+        size: fontSize,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
+
+      const pdfBytes = await pdfDoc.save();
+      setEditedPdf(pdfBytes);
+    } catch (error) {
+      console.error("Error adding text:", error);
+      alert("Failed to add text. Please make sure the file is a valid PDF.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!editedPdf) return;
+
+    const blob = new Blob([editedPdf], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `edited-${selectedFile?.name || "document.pdf"}`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -33,14 +88,16 @@ export default function PDFEditorClient() {
           <p className="text-slate-600">Edit PDF text, images, and add annotations</p>
         </div>
 
-        {/* Info Alert */}
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-          <div className="text-sm text-blue-900">
-            <p className="font-semibold mb-1">Note:</p>
-            <p>PDF editing requires advanced libraries like pdf-lib, PDF.js, or PSPDFKit. This is a UI demo. For full functionality, integrate with a PDF editing library or API.</p>
+        {/* Success Alert */}
+        {editedPdf && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
+            <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+            <div className="text-sm text-green-900">
+              <p className="font-semibold mb-1">Text Added Successfully!</p>
+              <p>Your PDF has been edited. Click the download button to save it.</p>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="space-y-6">
           {/* Upload Section */}
@@ -69,28 +126,96 @@ export default function PDFEditorClient() {
           {selectedFile && (
             <>
               <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-                <h2 className="mb-4 text-lg font-semibold text-slate-900">Editing Tools</h2>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {["Add Text", "Add Image", "Highlight", "Draw"].map((tool) => (
-                    <button
-                      key={tool}
-                      disabled
-                      className="rounded-lg border-2 border-slate-300 bg-slate-200 p-3 text-sm font-semibold text-slate-400 cursor-not-allowed shadow-sm"
-                    >
-                      {tool}
-                    </button>
-                  ))}
+                <h2 className="mb-4 text-lg font-semibold text-slate-900">Add Text to PDF</h2>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Text to Add
+                    </label>
+                    <textarea
+                      value={textToAdd}
+                      onChange={(e) => setTextToAdd(e.target.value)}
+                      placeholder="Enter text to add to PDF"
+                      rows={3}
+                      className="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">
+                        X Position: {textX}
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="600"
+                        value={textX}
+                        onChange={(e) => setTextX(parseInt(e.target.value))}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">
+                        Y Position: {textY}
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="800"
+                        value={textY}
+                        onChange={(e) => setTextY(parseInt(e.target.value))}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Font Size: {fontSize}
+                    </label>
+                    <input
+                      type="range"
+                      min="8"
+                      max="72"
+                      value={fontSize}
+                      onChange={(e) => setFontSize(parseInt(e.target.value))}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleAddText}
+                    disabled={isProcessing || !textToAdd.trim()}
+                    className="w-full rounded-lg bg-violet-600 hover:bg-violet-700 border-2 border-violet-700 hover:border-violet-800 px-6 py-3 font-semibold text-white transition-all shadow-sm hover:shadow-md disabled:bg-slate-200 disabled:border-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span>Adding Text...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Type className="h-5 w-5" />
+                        <span>Add Text to PDF</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-                <div className="aspect-video rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center">
-                  <p className="text-slate-500">PDF editing canvas (Demo Mode)</p>
+              {editedPdf && (
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+                  <button
+                    onClick={handleDownload}
+                    className="w-full rounded-lg bg-green-600 hover:bg-green-700 border-2 border-green-700 hover:border-green-800 px-6 py-3 font-semibold text-white transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                  >
+                    <Download className="h-5 w-5" />
+                    <span>Download Edited PDF</span>
+                  </button>
                 </div>
-                <p className="mt-4 text-center text-sm text-slate-500">
-                  Integration with PDF editing library required for actual editing
-                </p>
-              </div>
+              )}
             </>
           )}
         </div>
