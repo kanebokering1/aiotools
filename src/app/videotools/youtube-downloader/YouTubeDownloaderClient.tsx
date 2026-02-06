@@ -15,6 +15,7 @@ export default function YouTubeDownloaderClient() {
   const relatedTools = getRelatedTools("youtube-downloader");
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [videoInfo, setVideoInfo] = useState<any>(null);
 
@@ -53,65 +54,107 @@ export default function YouTubeDownloaderClient() {
         return;
       }
 
-      // Use YouTube oEmbed API to get video info (no API key needed)
-      const oEmbedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
-      
-      const response = await fetch(oEmbedUrl);
+      // Use our API route to get video info (FREE - no third-party API!)
+      const response = await fetch(`/api/youtube/download?videoId=${videoId}`);
       
       if (!response.ok) {
-        throw new Error("Failed to fetch video information");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch video information");
       }
 
       const data = await response.json();
       
-      // Get thumbnail URL (high quality)
-      const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      if (!data.success) {
+        throw new Error(data.error || "Failed to get video information");
+      }
       
-      // Extract author from HTML or use provider name
-      const author = data.author_name || "Unknown Channel";
+      // Format duration
+      const formatDuration = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+      };
+      
+      // Format views
+      const formatViews = (views: string | number) => {
+        if (!views || views === "N/A") return "N/A";
+        const num = typeof views === 'string' ? parseInt(views) : views;
+        if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+        if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+        return num.toString();
+      };
       
       setVideoInfo({
         title: data.title,
-        thumbnail: thumbnailUrl,
+        thumbnail: data.thumbnail || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
         videoId: videoId,
-        author: author,
-        // Note: oEmbed doesn't provide duration and views, these would need YouTube Data API
-        duration: "N/A",
-        views: "N/A",
+        author: data.author,
+        duration: data.duration ? formatDuration(data.duration) : "N/A",
+        views: formatViews(data.views),
         embedUrl: `https://www.youtube.com/embed/${videoId}`
       });
       
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching video info:", err);
-      setError("Failed to fetch video information. Please make sure the URL is correct and the video is publicly available.");
+      setError(err.message || "Failed to fetch video information. Please make sure the URL is correct and the video is publicly available.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDownload = (format: string, quality: string) => {
+  const handleDownload = async (format: string, quality: string) => {
     if (!videoInfo || !videoInfo.videoId) {
       setError("Video information not available");
       return;
     }
 
-    // Note: Direct download from browser is not possible due to CORS and YouTube's ToS
-    // This would require a backend API service
-    // For now, we'll provide instructions and alternative solutions
-    
-    const message = `To download this video:\n\n` +
-      `1. Use a YouTube downloader service (like y2mate.com, savefrom.net)\n` +
-      `2. Or use a browser extension\n` +
-      `3. Or use a desktop application (like yt-dlp)\n\n` +
-      `Video ID: ${videoInfo.videoId}\n` +
-      `Format: ${format}\n` +
-      `Quality: ${quality}\n\n` +
-      `Note: Direct download requires server-side processing due to YouTube's terms of service.`;
-    
-    alert(message);
-    
-    // Alternative: Open video in new tab for user to use browser extension
-    // window.open(`https://www.youtube.com/watch?v=${videoInfo.videoId}`, '_blank');
+    const downloadKey = `${format}-${quality}`;
+    setIsDownloading(downloadKey);
+    setError(null);
+
+    try {
+      // Call our API route to get download URL
+      const response = await fetch('/api/youtube/download', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          videoId: videoInfo.videoId,
+          format: format === 'MP3' ? 'audio' : 'video',
+          quality: quality.toLowerCase().replace('kbps', '').replace('p', 'p')
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to get download URL');
+      }
+
+      const data = await response.json();
+      
+      if (!data.success || !data.downloadUrl) {
+        throw new Error('No download URL available');
+      }
+
+      // Create download link and trigger download
+      const link = document.createElement('a');
+      link.href = data.downloadUrl;
+      link.download = `${videoInfo.title || 'video'}.${format === 'MP3' ? 'mp3' : 'mp4'}`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Show success message
+      setError(null);
+      
+    } catch (err: any) {
+      console.error('Download error:', err);
+      setError(err.message || 'Failed to download. Please try again.');
+    } finally {
+      setIsDownloading(null);
+    }
   };
 
   return (
@@ -154,16 +197,16 @@ export default function YouTubeDownloaderClient() {
         </div>
 
         {/* Important Notice */}
-        <div className="mb-8 rounded-lg bg-blue-50 border border-blue-200 p-4">
+        <div className="mb-8 rounded-lg bg-green-50 border border-green-200 p-4">
           <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+            <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
             <div className="text-sm">
-              <p className="font-medium text-blue-800 mb-1">
-                How to Download Videos
+              <p className="font-medium text-green-800 mb-1">
+                ✅ Direct Download Available!
               </p>
-              <p className="text-blue-700">
-                This tool extracts video information and displays it. For actual downloads, you can use browser extensions, 
-                desktop applications (like yt-dlp), or online services. Please respect copyright laws and YouTube's terms of service.
+              <p className="text-green-700">
+                This tool now supports direct video and audio downloads! Simply click the download button for your preferred format and quality. 
+                Please respect copyright laws and YouTube's terms of service.
               </p>
             </div>
           </div>
@@ -299,24 +342,39 @@ export default function YouTubeDownloaderClient() {
                   <div className="grid gap-2">
                     <button
                       onClick={() => handleDownload("MP4", "1080p")}
-                      className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left transition-colors hover:bg-gray-50"
+                      disabled={isDownloading === "MP4-1080p"}
+                      className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span>MP4 - 1080p HD</span>
-                      <Download className="h-4 w-4" />
+                      {isDownloading === "MP4-1080p" ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
                     </button>
                     <button
                       onClick={() => handleDownload("MP4", "720p")}
-                      className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left transition-colors hover:bg-gray-50"
+                      disabled={isDownloading === "MP4-720p"}
+                      className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span>MP4 - 720p HD</span>
-                      <Download className="h-4 w-4" />
+                      {isDownloading === "MP4-720p" ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
                     </button>
                     <button
                       onClick={() => handleDownload("MP4", "480p")}
-                      className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left transition-colors hover:bg-gray-50"
+                      disabled={isDownloading === "MP4-480p"}
+                      className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span>MP4 - 480p</span>
-                      <Download className="h-4 w-4" />
+                      {isDownloading === "MP4-480p" ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -327,17 +385,27 @@ export default function YouTubeDownloaderClient() {
                   <div className="grid gap-2">
                     <button
                       onClick={() => handleDownload("MP3", "320kbps")}
-                      className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left transition-colors hover:bg-gray-50"
+                      disabled={isDownloading === "MP3-320kbps"}
+                      className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span>MP3 - 320 kbps</span>
-                      <Download className="h-4 w-4" />
+                      {isDownloading === "MP3-320kbps" ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
                     </button>
                     <button
                       onClick={() => handleDownload("MP3", "128kbps")}
-                      className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left transition-colors hover:bg-gray-50"
+                      disabled={isDownloading === "MP3-128kbps"}
+                      className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span>MP3 - 128 kbps</span>
-                      <Download className="h-4 w-4" />
+                      {isDownloading === "MP3-128kbps" ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                 </div>
