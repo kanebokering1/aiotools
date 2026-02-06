@@ -49,58 +49,61 @@ export default function PDFToImageClient() {
     setSuccess("");
 
     try {
-      // Note: This is a placeholder implementation
-      // In a real app, you would use pdf-poppler, PDF.js, or a backend service
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Dynamically import PDF.js
+      const pdfjsLib = await import('pdfjs-dist');
       
-      // Simulate conversion - create placeholder images
-      const numPages = Math.floor(Math.random() * 5) + 1; // Random 1-5 pages
+      // Set worker source
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      
+      // Load PDF document
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const numPages = pdf.numPages;
+      
       const images: { name: string; url: string; page: number }[] = [];
+      const scale = 2; // Higher scale for better quality
       
-      for (let i = 1; i <= numPages; i++) {
-        // Create a placeholder canvas for demonstration
-        const canvas = document.createElement('canvas');
-        canvas.width = 595; // A4 width in pixels at 72 DPI
-        canvas.height = 842; // A4 height in pixels at 72 DPI
-        const ctx = canvas.getContext('2d');
+      // Convert each page to image
+      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale });
         
-        if (ctx) {
-          // Create a simple placeholder image
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          
-          // Add some placeholder content
-          ctx.fillStyle = '#000000';
-          ctx.font = '24px Arial';
-          ctx.textAlign = 'center';
-          ctx.fillText(`PDF Page ${i}`, canvas.width / 2, canvas.height / 2 - 50);
-          ctx.fillText(`Converted to ${outputFormat.toUpperCase()}`, canvas.width / 2, canvas.height / 2);
-          ctx.fillText(`Quality: ${quality}%`, canvas.width / 2, canvas.height / 2 + 50);
-          
-          // Add border
-          ctx.strokeStyle = '#cccccc';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
-          
-          // Convert to desired format
-          const mimeType = outputFormat === 'jpeg' ? 'image/jpeg' : 
-                          outputFormat === 'webp' ? 'image/webp' : 'image/png';
-          const qualityValue = outputFormat === 'png' ? 1 : quality / 100;
-          
-          const dataUrl = canvas.toDataURL(mimeType, qualityValue);
-          
-          images.push({
-            name: `${file.name.replace('.pdf', '')}_page_${i}.${outputFormat}`,
-            url: dataUrl,
-            page: i
-          });
+        // Create canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const context = canvas.getContext('2d');
+        
+        if (!context) {
+          throw new Error('Failed to get canvas context');
         }
+        
+        // Render PDF page to canvas
+        await page.render({
+          canvasContext: context,
+          viewport: viewport,
+          canvas: canvas
+        }).promise;
+        
+        // Convert to desired format
+        const mimeType = outputFormat === 'jpeg' ? 'image/jpeg' : 
+                        outputFormat === 'webp' ? 'image/webp' : 'image/png';
+        const qualityValue = outputFormat === 'png' ? 1 : quality / 100;
+        
+        const dataUrl = canvas.toDataURL(mimeType, qualityValue);
+        
+        images.push({
+          name: `${file.name.replace('.pdf', '')}_page_${pageNum}.${outputFormat}`,
+          url: dataUrl,
+          page: pageNum
+        });
       }
       
       setConvertedImages(images);
       setSuccess(`PDF converted successfully! Generated ${images.length} image(s).`);
     } catch (err) {
-      setError("Failed to convert PDF. Please try again.");
+      console.error('PDF conversion error:', err);
+      setError("Failed to convert PDF. Please make sure the PDF file is valid and try again.");
     } finally {
       setIsConverting(false);
     }
