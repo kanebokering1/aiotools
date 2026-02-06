@@ -23,6 +23,12 @@ export default function YouTubeDownloaderClient() {
     return youtubeRegex.test(url);
   };
 
+  const extractVideoId = (url: string): string | null => {
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim()) {
@@ -40,32 +46,72 @@ export default function YouTubeDownloaderClient() {
     setVideoInfo(null);
 
     try {
-      // Note: This is a client-side implementation
-      // In a real app, you'd need a backend API to handle YouTube downloads
-      // due to CORS and YouTube's terms of service
+      const videoId = extractVideoId(url);
+      if (!videoId) {
+        setError("Could not extract video ID from URL. Please check your URL.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Use YouTube oEmbed API to get video info (no API key needed)
+      const oEmbedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await fetch(oEmbedUrl);
       
-      // Mock video info (in real implementation, this would come from your backend)
+      if (!response.ok) {
+        throw new Error("Failed to fetch video information");
+      }
+
+      const data = await response.json();
+      
+      // Get thumbnail URL (high quality)
+      const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      
+      // Extract author from HTML or use provider name
+      const author = data.author_name || "Unknown Channel";
+      
       setVideoInfo({
-        title: "Sample YouTube Video",
-        thumbnail: "https://via.placeholder.com/320x180?text=YouTube+Video",
-        duration: "5:30",
-        views: "1,234,567",
-        author: "Sample Channel"
+        title: data.title,
+        thumbnail: thumbnailUrl,
+        videoId: videoId,
+        author: author,
+        // Note: oEmbed doesn't provide duration and views, these would need YouTube Data API
+        duration: "N/A",
+        views: "N/A",
+        embedUrl: `https://www.youtube.com/embed/${videoId}`
       });
       
     } catch (err) {
-      setError("Failed to fetch video information. Please try again.");
+      console.error("Error fetching video info:", err);
+      setError("Failed to fetch video information. Please make sure the URL is correct and the video is publicly available.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDownload = (format: string, quality: string) => {
-    // In a real implementation, this would trigger the download
-    alert(`Download would start for ${format} in ${quality} quality`);
+    if (!videoInfo || !videoInfo.videoId) {
+      setError("Video information not available");
+      return;
+    }
+
+    // Note: Direct download from browser is not possible due to CORS and YouTube's ToS
+    // This would require a backend API service
+    // For now, we'll provide instructions and alternative solutions
+    
+    const message = `To download this video:\n\n` +
+      `1. Use a YouTube downloader service (like y2mate.com, savefrom.net)\n` +
+      `2. Or use a browser extension\n` +
+      `3. Or use a desktop application (like yt-dlp)\n\n` +
+      `Video ID: ${videoInfo.videoId}\n` +
+      `Format: ${format}\n` +
+      `Quality: ${quality}\n\n` +
+      `Note: Direct download requires server-side processing due to YouTube's terms of service.`;
+    
+    alert(message);
+    
+    // Alternative: Open video in new tab for user to use browser extension
+    // window.open(`https://www.youtube.com/watch?v=${videoInfo.videoId}`, '_blank');
   };
 
   return (
@@ -108,17 +154,16 @@ export default function YouTubeDownloaderClient() {
         </div>
 
         {/* Important Notice */}
-        <div className="mb-8 rounded-lg bg-amber-50 border border-amber-200 p-4">
+        <div className="mb-8 rounded-lg bg-blue-50 border border-blue-200 p-4">
           <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+            <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
             <div className="text-sm">
-              <p className="font-medium text-amber-800 mb-1">
-                Important Notice
+              <p className="font-medium text-blue-800 mb-1">
+                How to Download Videos
               </p>
-              <p className="text-amber-700">
-                This is a demo implementation. A real YouTube downloader requires server-side processing 
-                due to YouTube's terms of service and technical restrictions. Please respect copyright laws 
-                and YouTube's terms of service when downloading content.
+              <p className="text-blue-700">
+                This tool extracts video information and displays it. For actual downloads, you can use browser extensions, 
+                desktop applications (like yt-dlp), or online services. Please respect copyright laws and YouTube's terms of service.
               </p>
             </div>
           </div>
@@ -205,16 +250,40 @@ export default function YouTubeDownloaderClient() {
             <div className="grid gap-6 md:grid-cols-2">
               {/* Video Preview */}
               <div>
-                <img
-                  src={videoInfo.thumbnail}
-                  alt="Video thumbnail"
-                  className="w-full rounded-lg bg-gray-100"
-                />
-                <h4 className="mt-3 text-lg font-semibold text-gray-900">
+                <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-100 mb-3">
+                  <img
+                    src={videoInfo.thumbnail}
+                    alt={videoInfo.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to medium quality thumbnail if maxresdefault fails
+                      const target = e.target as HTMLImageElement;
+                      if (videoInfo.videoId) {
+                        target.src = `https://img.youtube.com/vi/${videoInfo.videoId}/hqdefault.jpg`;
+                      }
+                    }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-30 transition-opacity">
+                    <a
+                      href={`https://www.youtube.com/watch?v=${videoInfo.videoId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="opacity-0 hover:opacity-100 transition-opacity"
+                    >
+                      <div className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                        <Youtube className="h-5 w-5" />
+                        <span>Watch on YouTube</span>
+                      </div>
+                    </a>
+                  </div>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900">
                   {videoInfo.title}
                 </h4>
-                <p className="text-gray-600">
-                  {videoInfo.author} • {videoInfo.views} views • {videoInfo.duration}
+                <p className="text-gray-600 mt-1">
+                  {videoInfo.author}
+                  {videoInfo.views !== "N/A" && ` • ${videoInfo.views} views`}
+                  {videoInfo.duration !== "N/A" && ` • ${videoInfo.duration}`}
                 </p>
               </div>
 
