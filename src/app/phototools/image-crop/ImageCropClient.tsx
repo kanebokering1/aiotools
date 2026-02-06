@@ -5,7 +5,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { Crop, Upload, Download, Loader2, CheckCircle } from "lucide-react";
+import { Crop, Upload, Download, CheckCircle } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
 
@@ -194,8 +195,8 @@ export default function ImageCropClient() {
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span>Cropping...</span>
+                      <LoadingAnimation size="sm" message="" />
+                      <span>Processing...</span>
                     </>
                   ) : (
                     <>

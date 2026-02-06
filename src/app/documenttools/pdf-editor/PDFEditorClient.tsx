@@ -5,7 +5,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOContent from "@/components/SEOContent";
 import RelatedTools from "@/components/RelatedTools";
-import { Edit3, Upload, Download, Loader2, CheckCircle, Type, Image as ImageIcon, Highlighter } from "lucide-react";
+import { Edit3, Upload, Download, CheckCircle, Type, Image as ImageIcon, Highlighter } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { getToolSEOContent } from "@/lib/seo-content";
 import { getRelatedTools } from "@/lib/seo";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
@@ -192,8 +193,8 @@ export default function PDFEditorClient() {
                   >
                     {isProcessing ? (
                       <>
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        <span>Adding Text...</span>
+                        <LoadingAnimation size="sm" message="" />
+                        <span>Processing...</span>
                       </>
                     ) : (
                       <>
